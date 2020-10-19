@@ -1,0 +1,10 @@
+.ammonite
+.coursier
+.metals
+.vscode
+.bloop
+
+out
+
+credentials.json
+mill

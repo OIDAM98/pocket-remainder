@@ -1,0 +1,36 @@
+package utilities
+
+import sttp.client._
+
+object constants {
+  val AUTH_ROUTE = uri"https://getpocket.com/v3/oauth/request"
+  val AUTH_CODE_ROUTE = uri"https://getpocket.com/v3/oauth/authorize"
+  val ARTICLES_ROUTE = uri"https://getpocket.com/v3/get"
+
+  val REDIRECT_URI = "contentreminder://response"
+
+  object messages {
+    val INIT_PRINT = """This application must be called in the following format:
+    |      $app filename count
+    |
+    |filename = json file containing consumer key and access code.
+    |count = number of random articles to obtain.
+    """.stripMargin
+
+    val EXPIRED_TOKEN = """The token that was being used has already expired.
+    |Restart the application to obtain a new token.
+    """.stripMargin
+
+    val NO_TOKEN_FOUND = """No token was found inside the JSON file.
+    |Restart the application to obtain a new token.
+    """.stripMargin
+
+    val NO_FILE_FOUND = "No JSON file found with the specified name."
+
+    val NO_CONSUMER_KEY =
+      "No consumer key was found inside the specified JSON file."
+
+  }
+
+  val jsonRequest = basicRequest.header("X-Accept", "application/json")
+}

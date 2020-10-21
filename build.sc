@@ -7,14 +7,16 @@ object app extends ScalaModule {
       ivy"com.softwaremill.sttp.client::circe:2.2.9",
       ivy"io.circe::circe-core:0.13.0",
       ivy"io.circe::circe-generic:0.13.0",
-      ivy"com.lihaoyi::os-lib:0.7.1"
+      ivy"com.lihaoyi::os-lib:0.7.1",
+      ivy"org.typelevel::cats-core:2.2.0",
+      ivy"org.typelevel::cats-effect:2.2.0"
     )
   object test extends Tests {
     def testFrameworks = Seq("utest.runner.Framework")
 
     def ivyDeps =
       Agg(
-        ivy"com.lihaoyi::utest::0.7.4",
+        ivy"com.lihaoyi::utest::0.7.4"
       )
   }
 }

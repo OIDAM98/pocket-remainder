@@ -1,16 +1,11 @@
 import utilities._
-import errors.NoConsumerCodeFound
-import errors.UnexpectedError
-import errors.NoAccessTokenFound
-import errors.NoFileFound
-import errors.PocketError
+import model.errors._
 import model.responses.PocketItem
 
 import model.json.encoders._
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._
-import errors.ExpiredToken
 
 object Main extends App {
   if (args.length == 0 || args.length > 3) {

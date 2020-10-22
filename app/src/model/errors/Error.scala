@@ -1,4 +1,4 @@
-package errors
+package model.errors
 
 sealed trait PocketError
 case object NoFileFound extends PocketError

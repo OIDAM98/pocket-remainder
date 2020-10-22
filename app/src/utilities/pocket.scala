@@ -5,9 +5,13 @@ import model.responses.ConsumerKey
 import errors.PocketError
 import scala.util.Try
 import errors.UnexpectedError
+import cats.Applicative
 
 object pocket {
-  def fetchRandomArticles(list: List[PocketItem], max: Int): List[PocketItem] = {
+  def fetchRandomArticles(
+      list: List[PocketItem],
+      max: Int
+  ): List[PocketItem] = {
     import scala.collection.mutable
 
     val used = mutable.Set.empty[Int]
@@ -26,19 +30,4 @@ object pocket {
     }
     articles.toList
   }
-
-  import constants.REDIRECT_URI
-  import scala.io.StdIn.readLine
-  def waitForAuth(code: ConsumerKey): Either[PocketError, Unit] =
-    Try {
-      val redirectURL =
-        s"https://getpocket.com/auth/authorize?request_token=${code.code}&redirect_uri=${REDIRECT_URI}"
-      
-      println("Go to")
-      println(s"\t $redirectURL")
-      println("to authenticate the application.")
-
-      readLine("Press any letter after the app has been authorized")
-      ()
-    }.toEither.left.map(e => UnexpectedError(e.getMessage()))
 }

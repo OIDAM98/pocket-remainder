@@ -6,6 +6,7 @@
 .idea
 
 out
+target
 
 credentials.json
 mill

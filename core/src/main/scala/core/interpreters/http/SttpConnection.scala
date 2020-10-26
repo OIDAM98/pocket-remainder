@@ -1,7 +1,17 @@
-package interpreters
+package core.interpreters.http
 
-import utilities.constants._
-import sttp.client._
+import cats.Applicative
+import cats.data.EitherT
+import cats.effect.{Concurrent, ContextShift, Sync}
+import cats.implicits._
+import core.algebras.{Connection, Credentials}
+import core.model.credentials.PocketCredentials
+import core.model.errors.{PocketError, UnexpectedError}
+import core.model.json.decoders._
+import core.model.json.encoders._
+import core.model.requests.{PocketRequest, RequestAccessToken, RequestToken}
+import core.model.responses.{ConsumerKey, PocketAuth, PocketItems}
+import core.utilities.constants._
 import io.circe._
 import sttp.client.circe._
 import sttp.model.Uri
@@ -51,8 +61,7 @@ final class SttpConnection[F[_]: Sync] private (
       ).send.body.left.map(e => UnexpectedError(e.getMessage))
     }
 
-  import utilities.constants.REDIRECT_URI
-
+  import core.utilities.constants.REDIRECT_URI
   import scala.io.StdIn.readLine
 
   def getAccessToken(

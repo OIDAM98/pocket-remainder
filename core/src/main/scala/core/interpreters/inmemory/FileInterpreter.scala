@@ -9,15 +9,16 @@ import io.circe.parser._
 import core.model.errors._
 import core.algebras.Credentials
 import cats._
+import cats.implicits._
+import cats.effect.Sync
 
-final class FileInterpreter[F[_]: Applicative] private (val filename: String)
-    extends Credentials[F] {
-  def readCredentials: F[Either[PocketError, PocketCredentials]] = {
-    val file = Try(os.read(os.pwd / filename))
-    Applicative[F].pure {
-      file match {
+final class FileInterpreter[F[_]: Sync] private (val filename: String) extends Credentials[F] {
+  def readCredentials: F[Either[PocketError, PocketUseData]] =
+    Sync[F]
+      .delay(Try(os.read(os.pwd / filename)))
+      .map {
         case Success(value) =>
-          decode[PocketCredentials](value).left.map { e =>
+          decode[PocketCredentials](value).leftMap { e =>
             val message = e.getMessage
             if (message.contains("consumer_key"))
               NoConsumerCodeFound
@@ -25,18 +26,21 @@ final class FileInterpreter[F[_]: Applicative] private (val filename: String)
               NoAccessTokenFound
             else UnexpectedError(message)
           }
-
-        case Failure(_) => Left(NoFileFound)
+        case Failure(_) => Either.left(NoFileFound)
       }
-    }
-  }
+      .flatMap {
+        case Left(value) =>
+          value match {
+            case NoAccessTokenFound => readConsumerKey
+            case e                  => Sync[F].pure(Either.left(e))
+          }
+        case a => Sync[F].pure(a)
+      }
 
-  def readConsumerKey: F[Either[PocketError, PocketKey]] = {
-    val file = Try(os.read(os.pwd / filename))
-
-    Applicative[F].pure {
-
-      file match {
+  private def readConsumerKey: F[Either[PocketError, PocketUseData]] =
+    Sync[F]
+      .delay(Try(os.read(os.pwd / filename)))
+      .map {
         case Success(value) =>
           decode[PocketKey](value).left.map { e =>
             val message = e.getMessage
@@ -47,30 +51,27 @@ final class FileInterpreter[F[_]: Applicative] private (val filename: String)
 
         case Failure(_) => Left(NoFileFound)
       }
-    }
-  }
 
-  import model.json.encoders._
+  import core.model.json.encoders._
   import io.circe.syntax._
 
   def saveCredentials(
       credentials: PocketCredentials
   ): F[Either[PocketError, PocketCredentials]] =
-    Applicative[F].pure {
-      Try(
-        os.write.over(
-          os.pwd / filename,
-          credentials.asJson.spaces2
+    Sync[F]
+      .delay(
+        Try(
+          os.write.over(
+            os.pwd / filename,
+            credentials.asJson.spaces2
+          )
         )
-      ).toEither
-        .map(_ => credentials)
-        .left
-        .map(e => UnexpectedError(e.getMessage))
-    }
+      )
+      .map(_.toEither.map(_ => credentials).leftMap(e => UnexpectedError(e.getMessage)))
 
 }
 
 object FileInterpreter {
-  def make[F[_]: Applicative](filename: String) =
-    new FileInterpreter[F](filename)
+  def apply[F[_]: Sync](filename: String): F[FileInterpreter[F]] =
+    Applicative[F].pure(new FileInterpreter[F](filename))
 }

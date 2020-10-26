@@ -13,6 +13,9 @@ import core.model.requests.{PocketRequest, RequestAccessToken, RequestToken}
 import core.model.responses.{ConsumerKey, PocketAuth, PocketItems}
 import core.utilities.constants._
 import io.circe._
+import sttp.client._
+import sttp.client.asynchttpclient.WebSocketHandler
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
 import sttp.model.Uri
 import model.errors.PocketError
@@ -37,7 +40,7 @@ import scala.util.Try
 final class SttpConnection[F[_]: Sync] private (
     consumerKey: String,
     files: Credentials[F]
-)(implicit backend: HttpURLConnectionBackend)
+)(implicit val backend: SttpBackend[F, Nothing, WebSocketHandler])
     extends Connection[F] {
 
   private type ErrorWrapped[A] = EitherT[F, PocketError, A]
@@ -112,8 +115,14 @@ final class SttpConnection[F[_]: Sync] private (
 }
 
 object SttpConnection {
-  def make[F[_]: Sync](consumerKey: String, files: Credentials[F]) =
-    Sync[F].delay(HttpURLConnectionBackend).map { implicit backend =>
-      new SttpConnection[F](consumerKey, files)
+  def apply[F[_]: Concurrent](
+      consumerKey: String,
+      files: Credentials[F]
+  )(implicit cs: ContextShift[F]): F[SttpConnection[F]] = {
+
+    AsyncHttpClientCatsBackend[F]().flatMap {
+      implicit backend: SttpBackend[F, Nothing, WebSocketHandler] =>
+        Sync[F].pure(new SttpConnection[F](consumerKey, files))
     }
+  }
 }

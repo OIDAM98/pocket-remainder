@@ -1,4 +1,4 @@
-package model
+package core.model
 
 object requests {
   case class RequestToken(consumer_key: String, redirect_uri: String)

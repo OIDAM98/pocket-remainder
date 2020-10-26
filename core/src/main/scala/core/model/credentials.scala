@@ -1,10 +1,13 @@
-package model
+package core.model
 
-import model.requests.PocketRequest
+import core.model.requests.PocketRequest
 
 object credentials {
-  case class PocketKey(consumer_key: String)
-  case class PocketCredentials(consumer_key: String, access_token: String) {
-    def toRequest(count: Int): PocketRequest = PocketRequest(this.consumer_key, this.access_token, count = count)
+  sealed abstract class PocketUseData(val consumer_key: String)
+  case class PocketKey(override val consumer_key: String) extends PocketUseData(consumer_key)
+  case class PocketCredentials(override val consumer_key: String, access_token: String)
+      extends PocketUseData(consumer_key) {
+    def toRequest(count: Int): PocketRequest =
+      PocketRequest(this.consumer_key, this.access_token, count = count)
   }
 }

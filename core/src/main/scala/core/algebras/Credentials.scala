@@ -1,11 +1,9 @@
-package algebras
+package core.algebras
 
-import model.errors.PocketError
-import model.credentials.PocketCredentials
-import model.credentials.PocketKey
+import core.model.errors.PocketError
+import core.model.credentials.{PocketCredentials, PocketUseData}
 
 trait Credentials[F[_]] {
-  def readCredentials: F[Either[PocketError, PocketCredentials]]
-  def readConsumerKey: F[Either[PocketError, PocketKey]]
+  def readCredentials: F[Either[PocketError, PocketUseData]]
   def saveCredentials(saveCredentials: PocketCredentials): F[Either[PocketError, PocketCredentials]]
 }

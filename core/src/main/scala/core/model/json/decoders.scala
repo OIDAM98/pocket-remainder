@@ -1,7 +1,7 @@
-package model.json
+package core.model.json
 
-import model.responses._
-import model.credentials._
+import core.model.responses._
+import core.model.credentials._
 
 import io.circe._
 import io.circe.generic.semiauto._

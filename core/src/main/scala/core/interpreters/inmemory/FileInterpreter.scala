@@ -1,15 +1,13 @@
-package interpreters.inmemory
+package core.interpreters.inmemory
 
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import model.credentials.PocketCredentials
-
-import model.json.decoders._
+import core.model.credentials.{PocketCredentials, PocketKey, PocketUseData}
+import core.model.json.decoders._
 import io.circe.parser._
-import model.errors._
-import model.credentials.PocketKey
-import algebras.Credentials
+import core.model.errors._
+import core.algebras.Credentials
 import cats._
 
 final class FileInterpreter[F[_]: Applicative] private (val filename: String)

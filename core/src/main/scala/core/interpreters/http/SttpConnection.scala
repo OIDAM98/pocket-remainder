@@ -18,22 +18,6 @@ import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
 import sttp.model.Uri
-import model.errors.PocketError
-import model.responses.ConsumerKey
-import model.responses.PocketItems
-import model.responses.PocketAuth
-import model.requests.RequestToken
-import model.json.decoders._
-import model.json.encoders._
-import model.errors.UnexpectedError
-import model.requests.RequestAccessToken
-import model.credentials.PocketCredentials
-import model.requests.PocketRequest
-import cats.Applicative
-import algebras.{Connection, Credentials}
-import cats.effect.Sync
-import cats.data.EitherT
-import cats.implicits._
 
 import scala.util.Try
 
@@ -57,12 +41,10 @@ final class SttpConnection[F[_]: Sync] private (
   }
 
   def getRequestToken: F[Either[PocketError, ConsumerKey]] =
-    Sync[F].pure {
-      generateRequest[RequestToken, ConsumerKey](
-        RequestToken(consumerKey, REDIRECT_URI),
-        AUTH_ROUTE
-      ).send.body.left.map(e => UnexpectedError(e.getMessage))
-    }
+    generateRequest[RequestToken, ConsumerKey](
+      RequestToken(consumerKey, REDIRECT_URI),
+      AUTH_ROUTE
+    ).send.map(_.body.leftMap(e => UnexpectedError(e.getMessage)))
 
   import core.utilities.constants.REDIRECT_URI
   import scala.io.StdIn.readLine
@@ -70,17 +52,15 @@ final class SttpConnection[F[_]: Sync] private (
   def getAccessToken(
       code: String
   ): F[Either[PocketError, PocketAuth]] =
-    Sync[F].pure {
-      generateRequest[RequestAccessToken, PocketAuth](
-        RequestAccessToken(consumerKey, code),
-        AUTH_CODE_ROUTE
-      ).send.body.left.map(e => UnexpectedError(e.getMessage))
-    }
+    generateRequest[RequestAccessToken, PocketAuth](
+      RequestAccessToken(consumerKey, code),
+      AUTH_CODE_ROUTE
+    ).send.map(_.body.leftMap(e => UnexpectedError(e.getMessage)))
 
   def waitForAuth(
       code: ConsumerKey
   ): F[Either[PocketError, ConsumerKey]] =
-    Sync[F].pure {
+    Sync[F].delay {
       Try {
         val redirectURL =
           s"https://getpocket.com/auth/authorize?request_token=${code.code}&redirect_uri=$REDIRECT_URI"
@@ -91,19 +71,17 @@ final class SttpConnection[F[_]: Sync] private (
 
         readLine("Press any letter after the app has been authorized")
         code
-      }.toEither.left.map(e => UnexpectedError(e.getMessage))
+      }.toEither.leftMap(e => UnexpectedError(e.getMessage))
     }
 
   def getArticles(
       credentials: PocketCredentials,
       n: Int
   ): F[Either[PocketError, PocketItems]] =
-    Applicative[F].pure {
-      generateRequest[PocketRequest, PocketItems](
-        credentials.toRequest(n),
-        ARTICLES_ROUTE
-      ).send.body.left.map(e => UnexpectedError(e.getMessage))
-    }
+    generateRequest[PocketRequest, PocketItems](
+      credentials.toRequest(n),
+      ARTICLES_ROUTE
+    ).send.map(_.body.left.map(e => UnexpectedError(e.getMessage)))
 
   private def generateRequest[A, B: Decoder](body: A, path: Uri)(implicit
       view: A => BasicRequestBody

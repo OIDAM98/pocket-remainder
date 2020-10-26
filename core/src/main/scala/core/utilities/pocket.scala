@@ -26,4 +26,15 @@ object pocket {
     }
     articles.toList
   }
+
+  import io.circe.syntax._
+  import core.model.json.encoders.pocketArticle
+
+  def printArticles[F[_]: Sync](articles: List[PocketArticle]): F[Unit] =
+    Sync[F].delay {
+      val jsons = articles.map(_.asJson.spaces2)
+      val list  = jsons.mkString("\n")
+      println(list)
+    }
+
 }

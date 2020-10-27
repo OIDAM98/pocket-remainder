@@ -10,10 +10,12 @@ object constants {
   val REDIRECT_URI = "contentreminder://response"
 
   object messages {
-    val INIT_PRINT: String = """This application must be called in the following format:
-    |      $app filename count
+    val INIT_PRINT: String = """
+    |This application must be called in the following format:
+    |      $app filename max count
     |
     |filename = json file containing consumer key and access code.
+    |max = total number of articles to fetch from Pocket.
     |count = number of random articles to obtain.
     """.stripMargin
 

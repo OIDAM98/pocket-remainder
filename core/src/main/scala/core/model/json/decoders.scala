@@ -1,8 +1,8 @@
 package core.model.json
 
+import core.model.MailCredentials
 import core.model.responses._
 import core.model.credentials._
-
 import io.circe._
 import io.circe.generic.semiauto._
 import sttp.client.circe._
@@ -16,5 +16,6 @@ object decoders {
   implicit val pocketCredentialsDecoder: Decoder[PocketCredentials] =
     deriveDecoder
   implicit val consumerDecoder: Decoder[PocketKey] = deriveDecoder
+  implicit val mailCredentialsDecoder: Decoder[MailCredentials] = deriveDecoder
 
 }

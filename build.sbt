@@ -11,7 +11,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "pocket-reminder"
   )
-  .aggregate(core)
+  .aggregate(core, console)
 
 lazy val core = (project in file("core"))
   .settings(
@@ -26,9 +26,13 @@ lazy val core = (project in file("core"))
       "com.softwaremill.sttp.client" %% "circe"                          % "2.2.9",
       "com.softwaremill.sttp.client" %% "cats"                           % "2.2.9",
       "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.9",
-      "com.lihaoyi" %% "os-lib" % "0.7.1"
+      "com.lihaoyi"                  %% "os-lib"                         % "0.7.1",
     ),
     libraryDependencies += scalaTest % Test
   )
+
+lazy val console = (project in file("console"))
+  .settings(name := "pocket-console-client")
+  .dependsOn(core)
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.

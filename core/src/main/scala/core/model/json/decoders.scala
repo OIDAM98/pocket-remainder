@@ -1,6 +1,5 @@
 package core.model.json
 
-import core.model.MailCredentials
 import core.model.responses._
 import core.model.credentials._
 import io.circe._

@@ -17,5 +17,6 @@ object encoders {
     deriveEncoder
   implicit val pocketArticle: Encoder[PocketArticle] = deriveEncoder
   implicit val pocketItem: Encoder[PocketItem] = deriveEncoder
+  implicit val mailCredentialsEncoder: Encoder[MailCredentials] = deriveEncoder
 
 }

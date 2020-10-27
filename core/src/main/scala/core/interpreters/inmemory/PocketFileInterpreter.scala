@@ -12,7 +12,7 @@ import cats._
 import cats.implicits._
 import cats.effect.Sync
 
-final class FileInterpreter[F[_]: Sync] private (val filename: String) extends Credentials[F] {
+final class PocketFileInterpreter[F[_]: Sync] private(val filename: String) extends Credentials[F, PocketUseData] {
   def readCredentials: F[Either[PocketError, PocketUseData]] =
     Sync[F]
       .delay(Try(os.read(os.pwd / filename)))
@@ -71,7 +71,7 @@ final class FileInterpreter[F[_]: Sync] private (val filename: String) extends C
 
 }
 
-object FileInterpreter {
-  def apply[F[_]: Sync](filename: String): F[FileInterpreter[F]] =
-    Applicative[F].pure(new FileInterpreter[F](filename))
+object PocketFileInterpreter {
+  def apply[F[_]: Sync](filename: String): F[PocketFileInterpreter[F]] =
+    Applicative[F].pure(new PocketFileInterpreter[F](filename))
 }

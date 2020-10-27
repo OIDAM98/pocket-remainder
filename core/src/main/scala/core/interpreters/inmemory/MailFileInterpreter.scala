@@ -35,3 +35,10 @@ final class MailFileInterpreter[F[_]: Sync] private (filename: String)
       )
       .map(_.toEither.map(_ => saveCredentials).leftMap(e => UnexpectedError(e.getMessage)))
 }
+
+object MailFileInterpreter {
+  def make[F[_]: Sync](filename: String): F[MailFileInterpreter[F]] =
+    Sync[F].pure(
+      new MailFileInterpreter[F](filename)
+    )
+}

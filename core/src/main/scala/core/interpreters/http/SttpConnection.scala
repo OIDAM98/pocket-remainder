@@ -5,7 +5,7 @@ import cats.data.EitherT
 import cats.effect.{Concurrent, ContextShift, Sync}
 import cats.implicits._
 import core.algebras.{Connection, Credentials}
-import core.model.credentials.PocketCredentials
+import core.model.credentials.{PocketCredentials, PocketUseData}
 import core.model.errors.{PocketError, UnexpectedError}
 import core.model.json.decoders._
 import core.model.json.encoders._
@@ -23,7 +23,7 @@ import scala.util.Try
 
 final class SttpConnection[F[_]: Sync] private (
     consumerKey: String,
-    files: Credentials[F]
+    files: Credentials[F, PocketUseData]
 )(implicit val backend: SttpBackend[F, Nothing, WebSocketHandler])
     extends Connection[F] {
 
@@ -95,7 +95,7 @@ final class SttpConnection[F[_]: Sync] private (
 object SttpConnection {
   def apply[F[_]: Concurrent](
       consumerKey: String,
-      files: Credentials[F]
+      files: Credentials[F, PocketUseData]
   )(implicit cs: ContextShift[F]): F[SttpConnection[F]] = {
 
     AsyncHttpClientCatsBackend[F]().flatMap {

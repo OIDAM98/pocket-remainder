@@ -23,7 +23,7 @@ import scala.util.Try
 
 final class SttpConnection[F[_]: Sync] private (
     consumerKey: String,
-    files: Credentials[F, PocketUseData]
+    files: Credentials[F, PocketUseData, PocketCredentials]
 )(implicit val backend: SttpBackend[F, Nothing, WebSocketHandler])
     extends Connection[F] {
 
@@ -95,7 +95,7 @@ final class SttpConnection[F[_]: Sync] private (
 object SttpConnection {
   def apply[F[_]: Concurrent](
       consumerKey: String,
-      files: Credentials[F, PocketUseData]
+      files: Credentials[F, PocketUseData, PocketCredentials]
   )(implicit cs: ContextShift[F]): F[SttpConnection[F]] = {
 
     AsyncHttpClientCatsBackend[F]().flatMap {

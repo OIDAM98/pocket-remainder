@@ -1,5 +1,7 @@
 package core.utilities
 
+import java.time.format.DateTimeFormatter
+
 import cats.effect.Sync
 import core.model.responses.{PocketArticle, PocketItem}
 
@@ -36,5 +38,34 @@ object pocket {
       val list  = jsons.mkString("\n")
       println(list)
     }
+
+  import scalatags.Text.all._
+
+  private val FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+  // Return largest size of string found within articles
+  private def getLargest(articles: List[PocketArticle]): Int =
+    articles.foldLeft(0) {
+      case (cmax, article) =>
+        (article.pocket_url.length max cmax) max (article.title.length max cmax)
+    }
+
+  private def toHTMLFormat(article: PocketArticle, l: Int) =
+    div(
+      p(b("\tTitle: "), i(article.title)),
+      p(b("\tURL: "), article.pocket_url),
+      p(b("\tTime Added: "), article.time_added.format(FORMATTER)),
+      p(b("\tWord Count: "), article.word_count),
+      p("-" * l)
+    )
+
+  def createEmailBody(articles: List[PocketArticle]): String = {
+    val largest = getLargest(articles)
+    html(
+      body(
+        articles.map(a => toHTMLFormat(a, largest))
+      )
+    ).render
+  }
 
 }

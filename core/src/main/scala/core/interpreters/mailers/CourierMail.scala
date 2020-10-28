@@ -7,7 +7,7 @@ import core.model.credentials.MailCredentials
 import core.model.responses
 import courier._
 import Defaults._
-import core.model.errors.PocketError
+import core.model.errors.{PocketError, UnexpectedError}
 import core.utilities.pocket
 
 import scala.util.{Failure, Success}
@@ -19,7 +19,10 @@ final class CourierMail[F[_]: Async] private (credentials: MailCredentials) exte
       .as(credentials.email, credentials.password)
       .ssl(true)()
   )
-  def send(email: String, articles: List[responses.PocketArticle]): F[Either[PocketError, String]] =
+  def send(
+      email: String,
+      articles: List[responses.PocketArticle]
+  ): F[Either[PocketError, String]] = {
     for {
       mail <- mailer
       envelope =
@@ -38,7 +41,8 @@ final class CourierMail[F[_]: Async] private (credentials: MailCredentials) exte
           case Failure(exception) => cb(Left(exception))
         }
       }
-    } yield response.asRight
+    } yield response.asRight.orElse(UnexpectedError("Something went wrong sending the email!").asLeft)
+  }
 
 }
 

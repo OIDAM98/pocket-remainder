@@ -9,4 +9,5 @@ out
 target/
 
 credentials.json
+mail.json
 mill

@@ -2,33 +2,45 @@ package console
 
 import cats.data.EitherT
 import cats.effect.{ExitCode, IO, IOApp}
+import cats.implicits._
 import core.interpreters.PocketService
 import core.interpreters.http.SttpConnection
-import core.interpreters.inmemory.PocketFileInterpreter
-import core.model.errors.{ExpiredToken, NoAccessTokenFound, NoConsumerCodeFound, NoFileFound, PocketError, UnexpectedError}
+import core.interpreters.inmemory.{MailFileInterpreter, PocketFileInterpreter}
+import core.interpreters.mailers.CourierMail
+import core.model.errors.{
+  ExpiredToken,
+  NoAccessTokenFound,
+  NoConsumerCodeFound,
+  NoFileFound,
+  PocketError,
+  UnexpectedError
+}
 import core.utilities.{constants, pocket}
 
 object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    if (args.isEmpty || args.length > 3)
+    if (args.isEmpty || args.length != 5)
       IO.raiseError(new IllegalAccessException(constants.messages.INIT_PRINT)).as(ExitCode(2))
     else {
-      val filename = args.head
-      val count    = args(1).toInt
-      val size     = args(2).toInt
+      val pocketFile :: mailFile :: toEmail :: count :: size :: Nil = args
 
-      val articles = (for {
-        files       <- EitherT.right(PocketFileInterpreter[IO](filename))
-        credentials <- EitherT(files.readCredentials)
-        http <- EitherT.right(SttpConnection[IO](credentials.consumer_key, files))
-        service    <- EitherT.right(PocketService[IO](count, size, http))
-        randomList <- EitherT(service.getRandomArticles(credentials))
-      } yield randomList.map(_.toDomain)).value
+      val IOArticles = (for {
+        pocketFile  <- EitherT.right(PocketFileInterpreter[IO](pocketFile))
+        mailFile    <- EitherT.right(MailFileInterpreter[IO](mailFile))
+        pocketCred  <- EitherT(pocketFile.readCredentials)
+        mailCred    <- EitherT(mailFile.readCredentials)
+        http        <- EitherT.right(SttpConnection[IO](pocketCred.consumer_key, pocketFile))
+        service     <- EitherT.right(PocketService[IO](count.toInt, size.toInt, http))
+        mailer      <- EitherT.right(CourierMail[IO](mailCred))
+        randomItems <- EitherT(service.getRandomArticles(pocketCred))
+        randomList  = randomItems.map(_.toDomain)
+        message     <- EitherT(mailer.send(toEmail, randomList))
+      } yield (message, randomList)).value
 
-      articles
+      IOArticles
         .flatMap {
-          case Right(lst) => pocket.printArticles[IO](lst)
+          case Right((msg, lst)) => IO(println(msg)) >> pocket.printArticles[IO](lst)
           case Left(value: PocketError) =>
             IO {
               value match {

@@ -37,7 +37,7 @@ final class MailFileInterpreter[F[_]: Sync] private (filename: String)
 }
 
 object MailFileInterpreter {
-  def make[F[_]: Sync](filename: String): F[MailFileInterpreter[F]] =
+  def apply[F[_]: Sync](filename: String): F[MailFileInterpreter[F]] =
     Sync[F].pure(
       new MailFileInterpreter[F](filename)
     )

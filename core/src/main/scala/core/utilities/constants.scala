@@ -12,10 +12,11 @@ object constants {
   object messages {
     val INIT_PRINT: String = """
     |This application must be called in the following format:
-    |      $app credFile mailFile max count
+    |      $app credFile mailFile toEmail max count
     |
     |credFile = json file containing Pocket consumer key and access code.
     |mailFile = json file containing Gmail email and password to send mail from.
+    |toEmail = email that articles will be sent to.
     |max = total number of articles to fetch from Pocket.
     |count = number of random articles to obtain.
     """.stripMargin

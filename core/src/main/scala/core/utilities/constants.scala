@@ -3,9 +3,9 @@ package core.utilities
 import sttp.client._
 
 object constants {
-  val AUTH_ROUTE = uri"https://getpocket.com/v3/oauth/request"
+  val AUTH_ROUTE      = uri"https://getpocket.com/v3/oauth/request"
   val AUTH_CODE_ROUTE = uri"https://getpocket.com/v3/oauth/authorize"
-  val ARTICLES_ROUTE = uri"https://getpocket.com/v3/get"
+  val ARTICLES_ROUTE  = uri"https://getpocket.com/v3/get"
 
   val REDIRECT_URI = "contentreminder://response"
 
@@ -36,5 +36,6 @@ object constants {
 
   }
 
-  val jsonRequest: RequestT[Empty, Either[String, String], Nothing] = basicRequest.header("X-Accept", "application/json")
+  val jsonRequest: RequestT[Empty, Either[String, String], Nothing] =
+    basicRequest.header("X-Accept", "application/json")
 }

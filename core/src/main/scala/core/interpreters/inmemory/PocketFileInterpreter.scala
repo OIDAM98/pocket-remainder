@@ -12,7 +12,8 @@ import cats._
 import cats.implicits._
 import cats.effect.Sync
 
-final class PocketFileInterpreter[F[_]: Sync] private(val filename: String) extends Credentials[F, PocketUseData, PocketCredentials] {
+final class PocketFileInterpreter[F[_]: Sync] private (val filename: String)
+    extends Credentials[F, PocketUseData, PocketCredentials] {
   def readCredentials: F[Either[PocketError, PocketUseData]] =
     Sync[F]
       .delay(Try(os.read(os.pwd / filename)))

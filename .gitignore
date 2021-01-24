@@ -10,4 +10,5 @@ target/
 
 credentials.json
 mail.json
+metals.sbt
 mill

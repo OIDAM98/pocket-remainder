@@ -1,4 +1,4 @@
-package core.interpreters
+package interpreters
 
 import cats.data.EitherT
 import cats.effect.Sync

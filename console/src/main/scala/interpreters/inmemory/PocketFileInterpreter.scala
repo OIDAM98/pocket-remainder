@@ -1,4 +1,4 @@
-package core.interpreters.inmemory
+package interpreters.inmemory
 
 import scala.util.Try
 import scala.util.Success

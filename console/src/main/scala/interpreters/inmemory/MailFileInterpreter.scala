@@ -1,4 +1,4 @@
-package core.interpreters.inmemory
+package interpreters.inmemory
 
 import cats.implicits._
 import cats.effect.Sync

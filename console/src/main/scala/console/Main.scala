@@ -3,19 +3,12 @@ package console
 import cats.data.EitherT
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import core.interpreters.PocketService
-import core.interpreters.http.SttpConnection
-import core.interpreters.inmemory.{MailFileInterpreter, PocketFileInterpreter}
-import core.interpreters.mailers.CourierMail
-import core.model.errors.{
-  ExpiredToken,
-  NoAccessTokenFound,
-  NoConsumerCodeFound,
-  NoFileFound,
-  PocketError,
-  UnexpectedError
-}
+import core.model.errors.{ExpiredToken, NoAccessTokenFound, NoConsumerCodeFound, NoFileFound, PocketError, UnexpectedError}
 import core.utilities.{constants, pocket}
+import interpreters.PocketService
+import interpreters.http.SttpConnection
+import interpreters.inmemory.{MailFileInterpreter, PocketFileInterpreter}
+import interpreters.mailers.CourierMail
 
 object Main extends IOApp {
 

@@ -1,4 +1,4 @@
-package core.interpreters.http
+package interpreters.http
 
 import cats.Applicative
 import cats.data.EitherT

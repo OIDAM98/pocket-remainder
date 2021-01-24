@@ -1,4 +1,4 @@
-package core.interpreters.mailers
+package interpreters.mailers
 
 import cats.effect.Async
 import core.algebras.MailService

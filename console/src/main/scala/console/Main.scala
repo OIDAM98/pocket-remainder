@@ -17,7 +17,7 @@ import interpreters.PocketService
 import interpreters.http.SttpConnection
 import interpreters.inmemory.{MailFileInterpreter, PocketFileInterpreter}
 import interpreters.mailers.CourierMail
-import cron4s.{Cron, CronExpr}
+import cron4s.Cron
 import fs2.Stream
 import eu.timepit.fs2cron.schedule
 
@@ -69,17 +69,20 @@ object Main extends IOApp {
     else {
       val pocketFile :: mailFile :: toEmail :: count :: size :: Nil = args
       //val timeToWait                                                = " 0 0 11 ? * SUN * "
-      val timeToWait ="0 */2 * ? * *"
-      val cronTask   = Cron.unsafeParse(timeToWait)
-      for {
-        _ <- schedule(
-          List(
-            cronTask -> Stream.eval(
-              drainToConsole(generateArticles(pocketFile, mailFile, toEmail, count, size))
-            )
-          )
-        ).compile.drain
-      } yield ExitCode.Success
+      val timeToWait = "0 */2 * ? * *"
+      Cron.parse(timeToWait) match {
+        case Left(err) => IO(println(err.getMessage)).map(_ => ExitCode.Error)
+        case Right(cronTask) =>
+          for {
+            _ <- schedule(
+              List(
+                cronTask -> Stream.eval(
+                  drainToConsole(generateArticles(pocketFile, mailFile, toEmail, count, size))
+                )
+              )
+            ).compile.drain
+          } yield ExitCode.Success
+      }
 
     }
 

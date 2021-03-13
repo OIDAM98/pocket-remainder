@@ -29,7 +29,7 @@ lazy val core = (project in file("core"))
       "com.lihaoyi"                  %% "os-lib"                         % "0.7.1",
       "com.github.daddykotex"        %% "courier"                        % "2.0.0",
       "com.lihaoyi"                  %% "scalatags"                      % "0.9.2",
-      "eu.timepit" %% "fs2-cron-core" % "0.2.2"
+      "eu.timepit"                   %% "fs2-cron-core"                  % "0.2.2"
     ),
     libraryDependencies += scalaTest % Test
   )

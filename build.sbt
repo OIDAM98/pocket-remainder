@@ -28,7 +28,8 @@ lazy val core = (project in file("core"))
       "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.9",
       "com.lihaoyi"                  %% "os-lib"                         % "0.7.1",
       "com.github.daddykotex"        %% "courier"                        % "2.0.0",
-      "com.lihaoyi"                  %% "scalatags"                      % "0.9.2"
+      "com.lihaoyi"                  %% "scalatags"                      % "0.9.2",
+      "eu.timepit" %% "fs2-cron-core" % "0.2.2"
     ),
     libraryDependencies += scalaTest % Test
   )

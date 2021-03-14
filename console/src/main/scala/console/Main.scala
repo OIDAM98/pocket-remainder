@@ -1,5 +1,8 @@
 package console
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import cats.data.EitherT
 import cats.effect.{ContextShift, ExitCode, IO, IOApp}
 import cats.implicits._
@@ -25,6 +28,9 @@ import scala.concurrent.ExecutionContext
 
 object Main extends IOApp {
 
+  val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+  def getCurrentTime: String         = dateFormatter.format(LocalDateTime.now)
+
   def generateArticles(
       pocketFile: String,
       mailFile: String,
@@ -42,14 +48,23 @@ object Main extends IOApp {
       mailer      <- EitherT.right(CourierMail[IO](mailCred))
       randomItems <- EitherT(service.getRandomArticles(pocketCred))
       randomList = randomItems.map(_.toDomain)
-      message <- EitherT(mailer.send(toEmail, randomList))
+      message <- EitherT(
+        mailer
+          .send(toEmail, randomList)
+          .handleErrorWith(err =>
+            IO(UnexpectedError(s"[ERROR - ${getCurrentTime()}]: \n" + err.getMessage).asLeft)
+          )
+      )
     } yield (message, randomList)).value
 
   def drainToConsole(
       articles: IO[Either[PocketError, (String, List[responses.PocketArticle])]]
   ): IO[Unit] =
     articles.flatMap {
-      case Right((msg, lst)) => IO(println(msg)) >> pocket.printArticles[IO](lst)
+      case Right((msg, lst)) =>
+        IO(println(s"[${getCurrentTime()}] $msg")) >> pocket.printArticles[IO](lst) >> IO(
+          println("===================\n")
+        )
       case Left(value: PocketError) =>
         IO {
           value match {

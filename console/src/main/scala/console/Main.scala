@@ -6,6 +6,8 @@ import java.time.format.DateTimeFormatter
 import cats.data.EitherT
 import cats.effect.{ContextShift, ExitCode, IO, IOApp}
 import cats.implicits._
+import core.model.configuration._
+import core.model.credentials.PocketCredentials
 import core.model.errors.{
   ExpiredToken,
   NoAccessTokenFound,
@@ -18,9 +20,8 @@ import core.model.responses
 import core.utilities.{constants, pocket}
 import interpreters.PocketService
 import interpreters.http.SttpConnection
-import interpreters.inmemory.{MailFileInterpreter, PocketFileInterpreter}
+import interpreters.inmemory.ConfigInterpreter
 import interpreters.mailers.CourierMail
-import cron4s.Cron
 import fs2.Stream
 import eu.timepit.fs2cron.schedule
 
@@ -29,28 +30,23 @@ import scala.concurrent.ExecutionContext
 object Main extends IOApp {
 
   val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
-  def getCurrentTime: String         = dateFormatter.format(LocalDateTime.now)
+
+  def getCurrentTime(): String = dateFormatter.format(LocalDateTime.now)
 
   def generateArticles(
-      pocketFile: String,
-      mailFile: String,
-      toEmail: String,
-      count: String,
-      size: String
+      conf: AppConfig,
+      mail: MailCredentials,
+      pocket: PocketCredentials
   ): IO[Either[PocketError, (String, List[responses.PocketArticle])]] =
     (for {
-      pocketFile  <- EitherT.right(PocketFileInterpreter[IO](pocketFile))
-      mailFile    <- EitherT.right(MailFileInterpreter[IO](mailFile))
-      pocketCred  <- EitherT(pocketFile.readCredentials)
-      mailCred    <- EitherT(mailFile.readCredentials)
-      http        <- EitherT.right(SttpConnection[IO](pocketCred.consumer_key, pocketFile))
-      service     <- EitherT.right(PocketService[IO](count.toInt, size.toInt, http))
-      mailer      <- EitherT.right(CourierMail[IO](mailCred))
-      randomItems <- EitherT(service.getRandomArticles(pocketCred))
+      http        <- EitherT.right(SttpConnection[IO](pocket.consumer_key))
+      service     <- EitherT.right(PocketService[IO](conf.count, conf.size, http))
+      mailer      <- EitherT.right(CourierMail[IO](mail))
+      randomItems <- EitherT(service.getRandomArticles(pocket))
       randomList = randomItems.map(_.toDomain)
       message <- EitherT(
         mailer
-          .send(toEmail, randomList)
+          .send(conf.to_send, randomList)
           .handleErrorWith(err =>
             IO(UnexpectedError(s"[ERROR - ${getCurrentTime()}]: \n" + err.getMessage).asLeft)
           )
@@ -78,27 +74,33 @@ object Main extends IOApp {
     }
 
   implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  override def run(args: List[String]): IO[ExitCode] = {
-    if (args.isEmpty || args.length != 5)
-      IO.raiseError(new IllegalAccessException(constants.messages.INIT_PRINT)).as(ExitCode(2))
-    else {
-      val pocketFile :: mailFile :: toEmail :: count :: size :: Nil = args
-      //val timeToWait                                                = " 0 0 11 ? * SUN * "
-      val timeToWait = "0 */2 * ? * *"
-      Cron.parse(timeToWait) match {
-        case Left(err) => IO(println(err.getMessage)).map(_ => ExitCode.Error)
-        case Right(cronTask) =>
-          for {
-            _ <- schedule(
-              List(
-                cronTask -> Stream.eval(
-                  drainToConsole(generateArticles(pocketFile, mailFile, toEmail, count, size))
-                )
-              )
-            ).compile.drain
-          } yield ExitCode.Success
-      }
 
+  override def run(args: List[String]): IO[ExitCode] = {
+
+    val confFile = args.headOption
+    //val timeToWait                                                = " 0 0 11 ? * SUN * "
+    val streamEt = (for {
+      confReader <- EitherT.right(ConfigInterpreter[IO](confFile))
+      config     <- EitherT(confReader.readCredentials)
+      stream = schedule(
+        List(
+          config.schedule -> Stream.eval(
+            drainToConsole(
+              generateArticles(
+                config.app_config,
+                config.notification_config.asInstanceOf[MailCredentials],
+                config.pocket
+              )
+            )
+          )
+        )
+      )
+
+    } yield stream).value
+
+    streamEt.flatMap {
+      case Left(err)     => IO.delay(println(s"[${getCurrentTime()}]: $err")) *> IO(ExitCode.Error)
+      case Right(stream) => stream.compile.drain *> IO(ExitCode.Success)
     }
 
   }

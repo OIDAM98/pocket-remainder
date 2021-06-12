@@ -2,6 +2,7 @@ package core.model.json
 
 import core.model.requests._
 import core.model.credentials._
+import core.model.configuration.MailCredentials
 
 import io.circe._
 import io.circe.generic.semiauto._

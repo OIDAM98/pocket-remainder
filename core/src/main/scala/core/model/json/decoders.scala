@@ -2,6 +2,7 @@ package core.model.json
 
 import core.model.responses._
 import core.model.credentials._
+import core.model.configuration.MailCredentials
 import io.circe._
 import io.circe.generic.semiauto._
 import sttp.client.circe._

@@ -3,7 +3,7 @@ package interpreters.mailers
 import cats.effect.Async
 import core.algebras.MailService
 import cats.implicits._
-import core.model.credentials.MailCredentials
+import core.model.configuration.MailCredentials
 import core.model.responses
 import courier._
 import Defaults._

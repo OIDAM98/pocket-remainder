@@ -3,7 +3,7 @@ package interpreters.inmemory
 import cats.implicits._
 import cats.effect.Sync
 import core.algebras.Credentials
-import core.model.credentials.MailCredentials
+import core.model.configuration.MailCredentials
 import core.model.errors.{NoFileFound, PocketError, UnexpectedError}
 import io.circe.parser._
 import core.model.json.decoders._

@@ -2,26 +2,32 @@ package interpreters.inmemory
 
 import cats.effect.Sync
 import core.algebras.Credentials
-import core.model.credentials._
+import core.model.configuration._
 import core.model.errors.{PocketError, UnexpectedError}
 import pureconfig.{ConfigFieldMapping, ConfigSource, ConfigWriter, KebabCase}
 import cats.implicits._
 import pureconfig.error.ConfigReaderFailures
-import pureconfig.generic.ProductHint
+import pureconfig.generic.{FieldCoproductHint, ProductHint}
 import pureconfig.generic.auto._
 import pureconfig.module.cron4s.cronExprConfigConvert
 
 import scala.util.Try
 
-final class AppMailInterpreter[F[_]: Sync] private (
-    filename: String
-) extends Credentials[F, AppMailConf, AppMailConf] {
+final class ConfigInterpreter[F[_]: Sync] private (
+    filename: Option[String]
+) extends Credentials[F, GlobalConfig, GlobalConfig] {
 
-  implicit val hint                  = ProductHint[PocketCredentials](ConfigFieldMapping(KebabCase, KebabCase))
-  private val fromResources: Boolean = if (filename == "") true else false
-  private val filePath = os.Path(filename, base = os.pwd )
+  implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(KebabCase, KebabCase))
+  implicit val notificationConfHint: FieldCoproductHint[NotificationCredentials] =
+    new FieldCoproductHint[NotificationCredentials]("type") {
+      override def fieldValue(name: String): String = name.dropRight("Credentials".length)
+    }
 
-  def readCredentials: F[Either[PocketError, AppMailConf]] =
+  private val file                   = filename.getOrElse("console/src/main/resources/application.conf")
+  private val fromResources: Boolean = filename.isEmpty
+  private val filePath               = os.Path(file, base = os.pwd)
+
+  def readCredentials: F[Either[PocketError, GlobalConfig]] =
     Sync[F].delay {
       val configRead =
         if (fromResources)
@@ -37,18 +43,18 @@ final class AppMailInterpreter[F[_]: Sync] private (
     }
 
   private val readFromResources =
-    ConfigSource.default.load[AppMailConf]
+    ConfigSource.default.load[GlobalConfig]
 
   private val readFromFilename =
-    ConfigSource.file(filePath.toNIO).load[AppMailConf]
+    ConfigSource.file(filePath.toNIO).load[GlobalConfig]
 
-  def saveCredentials(saveCredentials: AppMailConf): F[Either[PocketError, AppMailConf]] = {
+  def saveCredentials(saveCredentials: GlobalConfig): F[Either[PocketError, GlobalConfig]] = {
     Sync[F]
       .delay(
         Try(
           os.write.over(
-            os.pwd / filename,
-            ConfigWriter[AppMailConf].to(saveCredentials).render()
+            os.pwd / file,
+            ConfigWriter[GlobalConfig].to(saveCredentials).render()
           )
         )
       )
@@ -56,9 +62,9 @@ final class AppMailInterpreter[F[_]: Sync] private (
   }
 }
 
-object AppMailInterpreter {
+object ConfigInterpreter {
   def apply[F[_]: Sync](
-      filename: String = ""
-  ): F[AppMailInterpreter[F]] =
-    Sync[F].pure(new AppMailInterpreter[F](filename))
+      filename: Option[String]
+  ): F[ConfigInterpreter[F]] =
+    Sync[F].pure(new ConfigInterpreter[F](filename))
 }

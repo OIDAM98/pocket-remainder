@@ -22,8 +22,7 @@ import sttp.model.Uri
 import scala.util.Try
 
 final class SttpConnection[F[_]: Sync] private (
-    consumerKey: String,
-    files: Credentials[F, PocketUseData, PocketCredentials]
+    consumerKey: String
 )(implicit val backend: SttpBackend[F, Nothing, WebSocketHandler])
     extends Connection[F] {
 
@@ -35,8 +34,7 @@ final class SttpConnection[F[_]: Sync] private (
       _           <- EitherT(waitForAuth(code))
       token       <- EitherT(getAccessToken(code.code))
       credentials <- PocketCredentials(consumerKey, token.access_token).pure[ErrorWrapped]
-      cred        <- EitherT(files.saveCredentials(credentials))
-    } yield cred).value
+    } yield credentials).value
 
   }
 
@@ -94,13 +92,12 @@ final class SttpConnection[F[_]: Sync] private (
 
 object SttpConnection {
   def apply[F[_]: Concurrent](
-      consumerKey: String,
-      files: Credentials[F, PocketUseData, PocketCredentials]
+      consumerKey: String
   )(implicit cs: ContextShift[F]): F[SttpConnection[F]] = {
 
     AsyncHttpClientCatsBackend[F]().flatMap {
       implicit backend: SttpBackend[F, Nothing, WebSocketHandler] =>
-        Sync[F].pure(new SttpConnection[F](consumerKey, files))
+        Sync[F].pure(new SttpConnection[F](consumerKey))
     }
   }
 }

@@ -25,22 +25,30 @@ final class ConfigInterpreter[F[_]: Sync] private (
 
   private val file                   = filename.getOrElse("console/src/main/resources/application.conf")
   private val fromResources: Boolean = filename.isEmpty
-  private val filePath               = os.Path(file, base = os.pwd)
+  private val filePath               = os.Path(file, base = os.root)
 
   def readCredentials: F[Either[PocketError, GlobalConfig]] =
-    Sync[F].delay {
-      val configRead =
-        if (fromResources)
-          readFromResources
-        else
-          readFromFilename
+    Sync[F]
+      .delay {
+        val configRead =
+          if (fromResources)
+            readFromResources
+          else
+            readFromFilename
 
-      configRead
-        .leftMap { (e: ConfigReaderFailures) =>
-          println(e.prettyPrint(2))
-          UnexpectedError(e.prettyPrint(2))
+        println {
+          configRead match {
+            case Right(conf) => println(s"Read the following conf:\n$conf")
+            case _           => ()
+          }
         }
-    }
+
+        configRead
+          .leftMap { (e: ConfigReaderFailures) =>
+            println(e.prettyPrint(2))
+            UnexpectedError(e.prettyPrint(2))
+          }
+      }
 
   private val readFromResources =
     ConfigSource.default.load[GlobalConfig]

@@ -1,5 +1,5 @@
 ThisBuild / scalaVersion := "2.13.6"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "1.0.0-SNAPSHOT"
 ThisBuild / organization := "com.odealva"
 ThisBuild / organizationName := "odealva"
 
@@ -18,7 +18,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "pocket-reminder"
   )
-  .aggregate(core, console)
+  .aggregate(core, console, docker)
 
 lazy val core = (project in file("core"))
   .settings(
@@ -48,5 +48,19 @@ lazy val console = (project in file("console"))
     name := "pocket-console-client"
   )
   .dependsOn(core)
+
+import com.typesafe.sbt.packager.docker._
+
+lazy val docker = (project in file("."))
+  .aggregate(core, console)
+  .enablePlugins(DockerPlugin)
+  .enablePlugins(AshScriptPlugin)
+  .settings(
+    name := "RemindMe! Pocket",
+    packageName in Docker := "pocket-reminder-docker",
+    Defaults.itSettings,
+    dockerBaseImage := "openjdk:8u201-jre-alpine3.9",
+    dockerUpdateLatest := true
+  )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.

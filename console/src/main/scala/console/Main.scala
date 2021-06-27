@@ -98,8 +98,7 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    val confFile = args.headOption
-    //val timeToWait                                                = " 0 0 11 ? * SUN * "
+    val confFile = sys.env.get("CONFIG_PATH") <+> args.headOption
     val streamEt = (for {
       confReader <- EitherT.right(ConfigInterpreter[IO](confFile))
       config     <- EitherT(confReader.readCredentials)

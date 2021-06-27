@@ -14,7 +14,7 @@ object configuration {
       app_config: AppConfig,
       notification_config: NotificationCredentials,
       pocket: PocketCredentials,
-      schedule: CronExpr
+      schedules: List[CronExpr]
   )
 
 }

@@ -104,15 +104,16 @@ object Main extends IOApp {
       confReader <- EitherT.right(ConfigInterpreter[IO](confFile))
       config     <- EitherT(confReader.readCredentials)
       stream = schedule(
-        List(
-          config.schedule -> Stream.eval(
+        config.schedules.map { s =>
+          s -> Stream
+          .eval(
             sendArticles(
               config.app_config,
               config.notification_config,
               config.pocket
             )
           )
-        )
+        }
       )
 
     } yield stream).value

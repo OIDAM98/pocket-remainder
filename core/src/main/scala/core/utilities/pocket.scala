@@ -68,4 +68,18 @@ object pocket {
     ).render
   }
 
+  private def toMarkdownFormat(article: PocketArticle) =
+    article match {
+      case PocketArticle(_, _, title, _, _, time_added, word_count, pocket_url) =>
+        raw"""
+             |*$title*
+             |_Read here:_ $pocket_url
+             |*Time Added:* ${time_added.format(FORMATTER)}
+             |*Word Count:* $word_count""".stripMargin
+    }
+
+  def createMarkdownBody(articles: List[PocketArticle]): String =
+    articles.map(toMarkdownFormat).mkString("\n")
+
+
 }

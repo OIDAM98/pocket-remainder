@@ -12,6 +12,7 @@ val CatsEffectVersion = "2.2.0"
 val ScalatagsVersion  = "0.9.4"
 val CourierVersion    = "2.0.0"
 val OsLibVersion      = "0.7.8"
+val CanoeVersion      = "0.5.1"
 
 lazy val root = (project in file("."))
   .settings(
@@ -37,7 +38,8 @@ lazy val core = (project in file("core"))
       "com.lihaoyi"                  %% "scalatags"                      % ScalatagsVersion,
       "eu.timepit"                   %% "fs2-cron-core"                  % Fs2CronVersion,
       "com.github.pureconfig"        %% "pureconfig"                     % PureConfigVersion,
-      "com.github.pureconfig"        %% "pureconfig-cron4s"              % PureConfigVersion
+      "com.github.pureconfig"        %% "pureconfig-cron4s"              % PureConfigVersion,
+      "org.augustjune"               %% "canoe"                          % CanoeVersion
     )
   )
 

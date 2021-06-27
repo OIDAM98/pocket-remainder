@@ -8,7 +8,7 @@ object configuration {
 
   sealed trait NotificationCredentials
   final case class MailCredentials(email: String, password: String) extends NotificationCredentials
-  final case class TelegramCredentials(smt: String)                 extends NotificationCredentials
+  final case class TelegramCredentials(token: String, chatId: Long) extends NotificationCredentials
 
   final case class GlobalConfig(
       app_config: AppConfig,

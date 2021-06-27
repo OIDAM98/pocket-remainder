@@ -1,7 +1,7 @@
-package interpreters.mailers
+package interpreters.senders
 
 import cats.effect.Async
-import core.algebras.MailService
+import core.algebras.NotificationSender
 import cats.implicits._
 import core.model.configuration.MailCredentials
 import core.model.responses
@@ -12,7 +12,7 @@ import core.utilities.pocket
 
 import scala.util.{Failure, Success}
 
-final class CourierMail[F[_]: Async] private (credentials: MailCredentials) extends MailService[F] {
+final class CourierMailSender[F[_]: Async] private(credentials: MailCredentials, email: String) extends NotificationSender[F] {
   private val mailer: F[Mailer] = Async[F].delay(
     Mailer("smtp.gmail.com", 465)
       .auth(true)
@@ -20,7 +20,6 @@ final class CourierMail[F[_]: Async] private (credentials: MailCredentials) exte
       .ssl(true)()
   )
   def send(
-      email: String,
       articles: List[responses.PocketArticle]
   ): F[Either[PocketError, String]] = {
     for {
@@ -46,7 +45,7 @@ final class CourierMail[F[_]: Async] private (credentials: MailCredentials) exte
 
 }
 
-object CourierMail {
-  def apply[F[_]: Async](credentials: MailCredentials): F[CourierMail[F]] =
-    Async[F].delay(new CourierMail[F](credentials))
+object CourierMailSender {
+  def apply[F[_]: Async](credentials: MailCredentials, email: String): F[CourierMailSender[F]] =
+    Async[F].delay(new CourierMailSender[F](credentials, email))
 }

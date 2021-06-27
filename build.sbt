@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.Keys.makeBatScripts
+
 ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / version := "1.0.0-SNAPSHOT"
 ThisBuild / organization := "com.odealva"
@@ -57,10 +59,11 @@ lazy val docker = (project in file("."))
   .enablePlugins(AshScriptPlugin)
   .settings(
     name := "RemindMe! Pocket",
-    packageName in Docker := "pocket-reminder-docker",
+    packageName in Docker := "pocket-reminder",
     Defaults.itSettings,
     dockerBaseImage := "openjdk:8u201-jre-alpine3.9",
-    dockerUpdateLatest := true
+    dockerUpdateLatest := true,
+    makeBatScripts := Seq()
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.

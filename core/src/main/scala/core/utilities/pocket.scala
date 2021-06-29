@@ -73,7 +73,7 @@ object pocket {
       case PocketArticle(_, _, title, _, _, time_added, word_count, pocket_url) =>
         raw"""
              |*$title*
-             |_Read here:_ $pocket_url
+             |_Read here:_ [URL]($pocket_url)
              |*Time Added:* ${time_added.format(FORMATTER)}
              |*Word Count:* $word_count""".stripMargin
     }

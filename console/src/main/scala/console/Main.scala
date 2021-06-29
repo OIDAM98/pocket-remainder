@@ -27,13 +27,31 @@ import scala.concurrent.ExecutionContext
 
 object Main extends IOApp {
 
-  def generateArticles(conf: AppConfig, pocket: PocketCredentials)(
-      notifSender: IO[NotificationSender[IO]]
+  private def drainToConsole(
+      articles: IO[Either[PocketError, (String, List[responses.PocketArticle])]]
+  ): IO[Unit] =
+    articles.flatMap {
+      case Right((msg, lst)) =>
+        utils.logMsg[IO](msg) *>
+          utils.printArticles[IO](lst)
+
+      case Left(value: PocketError) =>
+        value match {
+          case NoFileFound              => utils.logErr[IO](constants.messages.NO_FILE_FOUND)
+          case NoConsumerCodeFound      => utils.logErr[IO](constants.messages.NO_CONSUMER_KEY)
+          case NoAccessTokenFound       => utils.logErr[IO](constants.messages.NO_TOKEN_FOUND)
+          case ExpiredToken             => utils.logErr[IO](constants.messages.EXPIRED_TOKEN)
+          case UnexpectedError(message) => utils.logErr[IO](s"Unexpected Error - $message")
+        }
+
+    }
+
+  def generateArticles(
+      pocket: PocketCredentials,
+      service: PocketService[IO],
+      sender: NotificationSender[IO]
   ): IO[Either[PocketError, (String, List[responses.PocketArticle])]] =
     (for {
-      http    <- EitherT.right(SttpConnection[IO](pocket.consumer_key))
-      service <- EitherT.right(PocketService[IO](conf.count, conf.size, http))
-      sender  <- EitherT.right(notifSender)
       randomItems <- EitherT {
         service.getRandomArticles(pocket).flatTap {
           case Right(value) => utils.logMsg[IO](raw"""Attempting to send the following articles:
@@ -56,46 +74,12 @@ object Main extends IOApp {
       )
     } yield (message, randomList)).value
 
-  def drainToConsole(
-      articles: IO[Either[PocketError, (String, List[responses.PocketArticle])]]
-  ): IO[Unit] =
-    articles.flatMap {
-      case Right((msg, lst)) =>
-        utils.logMsg[IO](msg) *>
-          utils.printArticles[IO](lst)
-
-      case Left(value: PocketError) =>
-        value match {
-          case NoFileFound              => utils.logErr[IO](constants.messages.NO_FILE_FOUND)
-          case NoConsumerCodeFound      => utils.logErr[IO](constants.messages.NO_CONSUMER_KEY)
-          case NoAccessTokenFound       => utils.logErr[IO](constants.messages.NO_TOKEN_FOUND)
-          case ExpiredToken             => utils.logErr[IO](constants.messages.EXPIRED_TOKEN)
-          case UnexpectedError(message) => utils.logErr[IO](s"Unexpected Error - $message")
-        }
-
-    }
-
   def sendArticles(
-      conf: AppConfig,
-      credentials: NotificationCredentials,
-      pocket: PocketCredentials
-  ): IO[Unit] = {
-    val send =
-      generateArticles(
-        conf,
-        pocket
-      ) _
-
-    val sender =
-      credentials match {
-        case mail: MailCredentials =>
-          CourierMailSender[IO](mail, conf.to_send)
-        case telegram: TelegramCredentials =>
-          TelegramSender[IO](telegram)
-      }
-
-    drainToConsole(send(sender))
-  }
+      pocket: PocketCredentials,
+      service: PocketService[IO],
+      sender: NotificationSender[IO]
+  ): IO[Unit] =
+    drainToConsole(generateArticles(pocket, service, sender))
 
   implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
@@ -103,16 +87,28 @@ object Main extends IOApp {
 
     val confFile = sys.env.get("CONFIG_PATH") <+> args.headOption
     val streamEt = (for {
-      confReader <- EitherT.right(ConfigInterpreter[IO](confFile))
+      confReader <- EitherT.right[PocketError](ConfigInterpreter[IO](confFile))
       config     <- EitherT(confReader.readCredentials)
+      http       <- EitherT.right[PocketError](SttpConnection[IO](config.pocket.consumer_key))
+      service <- EitherT.right[PocketError](
+        PocketService[IO](config.app_config.count, config.app_config.size, http)
+      )
+      sender <- EitherT.right[PocketError] {
+        config.notification_config match {
+          case mail: MailCredentials =>
+            CourierMailSender[IO](mail, config.app_config.to_send)
+          case telegram: TelegramCredentials =>
+            TelegramSender[IO](telegram)
+        }
+      }
       stream = schedule(
         config.schedules.map { s =>
           s -> Stream
             .eval(
               sendArticles(
-                config.app_config,
-                config.notification_config,
-                config.pocket
+                config.pocket,
+                service,
+                sender
               )
             )
         }

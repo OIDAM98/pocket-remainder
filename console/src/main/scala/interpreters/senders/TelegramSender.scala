@@ -5,7 +5,7 @@ import core.algebras.NotificationSender
 import cats.implicits._
 import core.model.configuration.TelegramCredentials
 import core.model.responses
-import core.model.errors.{PocketError, UnexpectedError}
+import core.model.errors.PocketError
 import core.utilities.pocket
 import canoe.api._
 import canoe.syntax._
@@ -25,10 +25,10 @@ final class TelegramSender[F[_]: Async: ConcurrentEffect] private (
       .use { implicit cli =>
         sendMessage(pocket.createMarkdownBody(articles))
       }
-      .map(msg =>
-        s"Successfully sent message to ${credentials.chatId} with msg:\n ${msg.messageId}".asRight
-          .orElse(UnexpectedError("Something went wrong sending the email!").asLeft)
-      )
+      .map { msg =>
+        s"Successfully sent message to ${credentials.chatId} with msgID ${msg.messageId}:"
+          .asRight[PocketError]
+      }
 }
 
 object TelegramSender {

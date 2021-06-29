@@ -1,5 +1,6 @@
 package core.utilities
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import cats.effect.Sync
@@ -37,6 +38,7 @@ object pocket {
       val jsons = articles.map(_.asJson.spaces2)
       val list  = jsons.mkString("\n")
       println(list)
+      println("===================\n")
     }
 
   import scalatags.Text.all._
@@ -81,5 +83,14 @@ object pocket {
   def createMarkdownBody(articles: List[PocketArticle]): String =
     articles.map(toMarkdownFormat).mkString("\n")
 
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS")
+
+  def getCurrentTime(): String = dateFormatter.format(LocalDateTime.now)
+
+  def logMsg[F[_]: Sync](msg: String): F[Unit] =
+    Sync[F].delay(println(s"[${getCurrentTime()}] $msg"))
+
+  def logErr[F[_]: Sync](err: String): F[Unit] =
+    Sync[F].delay(println(s"[ERROR - ${getCurrentTime()}]:\n$err"))
 
 }

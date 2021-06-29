@@ -9,6 +9,7 @@ import cats.implicits._
 import pureconfig.error.ConfigReaderFailures
 import pureconfig.generic.{FieldCoproductHint, ProductHint}
 import pureconfig.generic.auto._
+import core.utilities.pocket
 import pureconfig.module.cron4s.cronExprConfigConvert
 
 import scala.util.Try
@@ -29,26 +30,19 @@ final class ConfigInterpreter[F[_]: Sync] private (
 
   def readCredentials: F[Either[PocketError, GlobalConfig]] =
     Sync[F]
-      .delay {
-        val configRead =
-          if (fromResources)
-            readFromResources
-          else
-            readFromFilename
-
-        println {
-          configRead match {
-            case Right(conf) => println(s"Read the following conf:\n$conf")
-            case _           => ()
+      .delay(if (fromResources) readFromResources else readFromFilename)
+      .flatTap(config =>
+        pocket.logMsg[F](
+          config match {
+            case Left(value)  => s"Error when loading config\n$value"
+            case Right(value) => s"Read the following config:\n$value"
           }
-        }
-
-        configRead
-          .leftMap { (e: ConfigReaderFailures) =>
-            println(e.prettyPrint(2))
-            UnexpectedError(e.prettyPrint(2))
-          }
-      }
+        )
+      )
+      .map(_.leftMap { (e: ConfigReaderFailures) =>
+        println(e.prettyPrint(2))
+        UnexpectedError(e.prettyPrint(2))
+      })
 
   private val readFromResources =
     ConfigSource.default.load[GlobalConfig]
